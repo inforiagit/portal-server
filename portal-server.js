@@ -105,6 +105,7 @@ async function tokenAuthentication(req, res, next){
     // 2. Verify access token
     jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET, (err, user) => {
       if (!err) {
+        req.user = user;
         res.locals.user = user;
         return next();
       }
@@ -134,6 +135,7 @@ async function tokenAuthentication(req, res, next){
           );
 
           // Attach user & send new access token in response header
+          req.user = refreshPayload;
           res.locals.user = refreshPayload;
           res.locals.IsLoggedIn = true;
           res.locals.refreshed = true; // Indicate token was refreshed

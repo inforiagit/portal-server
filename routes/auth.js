@@ -31,7 +31,7 @@ router.post('/login', async (req, res) => {
                 email_verified: user.email_verified || false,
                 phone_number_verified: user.phone_number_verified || false,
                 identity_verified: user.identity_verified || false
-            }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1m' })
+            }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '15m' })
             // }, process.env.ACCESS_TOKEN_SECRET)
 
             const refreshToken = jwt.sign({
@@ -39,7 +39,7 @@ router.post('/login', async (req, res) => {
                 email_verified: user.email_verified || false,
                 phone_number_verified: user.phone_number_verified || false,
                 identity_verified: user.identity_verified || false
-            }, process.env.REFRESH_TOKEN_SECRET)
+            }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: '7d' })
 
             user.refreshToken = refreshToken
             await user.save()
@@ -63,7 +63,7 @@ router.post('/register', async (req, res) => {
     try{
         const count = await User.countDocuments({email: req.body.email})
         // email exist
-        if(count > 0) return res.redirect('/?emailInUse')
+        if(count > 0) return res.json({ error: 'Email already in use' });
         // CREATE USER
         const vkey = randomstring.generate(65)
         req.body.password = await bcrypt.hash(req.body.password, 10)
@@ -72,7 +72,7 @@ router.post('/register', async (req, res) => {
 
         await user.save()
 
-        return res.json({ success: 'User created' });
+        return res.json({ success: 'User created', user: { id: user._id, email: user.email, name: user.first_name + ' ' + user.last_name } });
         
     }catch(e){
         console.error(e);
@@ -407,7 +407,33 @@ router.post('/register', async (req, res) => {
 //   });
 // }
 
+// GET USER INFO
+router.get('/me', async (req, res) => {
+    try {
+        if (!req.user) return res.json({ error: 'Not authenticated' });
+        
+        const user = await User.findById(req.user.user_id).select('-password -refreshToken');
+        if (!user) return res.json({ error: 'User not found' });
+        
+        const response = { 
+            user: { 
+                id: user._id, 
+                email: user.email, 
+                name: user.first_name + ' ' + user.last_name || user.username || 'User' 
+            } 
+        };
 
+        // If token was refreshed, include new access token
+        if (res.locals.newAccessToken) {
+            response.newAccessToken = res.locals.newAccessToken;
+        }
+
+        return res.json(response);
+    } catch(e) {
+        console.error(e);
+        return res.json({ error: 'ERROR' });
+    }
+});
 
 module.exports = router
 
