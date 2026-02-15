@@ -24,6 +24,10 @@ const appschema = new mongoose.Schema({
     icon: {
         type:String,
         required:true
+    },
+    description: {
+        type:String,
+        default: ''
     }
 })
 

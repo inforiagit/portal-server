@@ -17,8 +17,18 @@ const randomstring = require("randomstring")
 router.post('/login', async (req, res) => {
     // if(res.locals.user) return res.redirect(`/dasboard?You_are_Loged_in`)
     try{
+        // Validate input
+        if (!req.body.email || !req.body.password) {
+            return res.json({ error: 'Email and password are required' });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(req.body.email)) {
+            return res.json({ error: 'Invalid email format' });
+        }
+
         const user = await User.findOne({
-            email: req.body.email, 
+            email: req.body.email,
             deleted: { $ne: true }
         })
 
@@ -48,10 +58,34 @@ router.post('/login', async (req, res) => {
         }else{
             return res.json({ error: 'Wrong password' });
         }
-        
+
     }catch(e){
-        console.error(e);
-        return res.json({ error: 'ERROR' });
+        console.error('Login error:', e);
+
+        // MongoDB connection errors
+        if (e.name === 'MongoNetworkError' || e.name === 'MongoTimeoutError') {
+            return res.json({ error: 'Database connection error. Please try again.' });
+        }
+
+        // MongoDB query errors
+        if (e.name === 'MongoServerError') {
+            return res.json({ error: 'Database error. Please try again later.' });
+        }
+
+        // bcrypt errors
+        if (e.message && e.message.includes('bcrypt')) {
+            return res.json({ error: 'Authentication error. Please try again.' });
+        }
+
+        // JWT errors
+        if (e.name === 'JsonWebTokenError') {
+            return res.json({ error: 'Token generation error. Please contact support.' });
+        }
+
+        // Generic error
+        return res.json({
+            error: 'An unexpected error occurred. Please try again.'
+        });
     }
 
 })
