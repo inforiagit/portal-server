@@ -37,7 +37,7 @@ const userschema = new mongoose.Schema({
     profile_photo: {
         type:String,
         required:false,
-        default: '/assets/avatar.svg'
+        default: ''
     },
     register_date: {
         type:Date,

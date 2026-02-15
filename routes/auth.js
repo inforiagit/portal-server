@@ -445,16 +445,17 @@ router.post('/register', async (req, res) => {
 router.get('/me', async (req, res) => {
     try {
         if (!req.user) return res.json({ error: 'Not authenticated' });
-        
+
         const user = await User.findById(req.user.user_id).select('-password -refreshToken');
         if (!user) return res.json({ error: 'User not found' });
-        
-        const response = { 
-            user: { 
-                id: user._id, 
-                email: user.email, 
-                name: user.first_name + ' ' + user.last_name || user.username || 'User' 
-            } 
+
+        const response = {
+            user: {
+                id: user._id,
+                email: user.email,
+                name: user.first_name + ' ' + user.last_name || user.username || 'User',
+                profile_photo: user.profile_pic || user.profile_photo || undefined
+            }
         };
 
         // If token was refreshed, include new access token

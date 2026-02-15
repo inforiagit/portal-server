@@ -131,7 +131,7 @@ async function tokenAuthentication(req, res, next){
           const newAccessToken = jwt.sign(
             refreshPayload, // adjust payload fields
             process.env.ACCESS_TOKEN_SECRET,
-            { expiresIn: "1m" }
+            { expiresIn: "15m" }
           );
 
           // Attach user & send new access token in response header
